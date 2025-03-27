@@ -22,13 +22,14 @@ just python and a basic ability to parse json. But I'm sure you can handle that 
 - Outputs results in a JSON format.
 
 ## Usage:
-    python uniprot_pdb_mapper.py --uniprot_id <UniProt_ID> [--pdb_id <PDB_ID>] [--assembly <biological|asymmetric>] [--list_all]
+    python uniprot_pdb_mapper.py --uniprot_id <UniProt_ID> [--pdb_id <PDB_ID>] [--assembly <biological|asymmetric>] [--list_all] [--outfile]
 
 ## Arguments:
-- `--uniprot_id`: Required. The UniProt ID of the protein to map.
-- `--pdb_id`: Optional. The PDB ID of the structure to use for mapping.
+- `--uniprot_id <UniProt_ID>`: Required. The UniProt ID of the protein to map.
+- `--pdb_id <PDB_ID>`: Optional. The PDB ID of the structure to use for mapping.
+- `--assembly <biological|asymmetric>`: Optional. Whether to fetch the assymetric unit or biological assmembly.
 - `--list_all`: Optional. List all PDB entries mapped to the UniProt ID with metadata.
-- `--outfile`: Optional. Output file to write results in .json.
+- `--outfile`: Optional. Output file to write results in .json. Defaults to stdout.
 
 ## Dependencies:
 - Python 3
