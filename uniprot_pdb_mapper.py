@@ -2,43 +2,13 @@
 """
 Residue and Chain Mapper for UniProt and PDB
 
-This script maps residue numbering and chains between a UniProt ID and a PDB structure. 
-It offers the following functionalities:
-1. User-provided UniProt ID and PDB ID: Maps residues between the UniProt protein and the specified PDB structure.
-2. Automatic mode: Given only a UniProt ID, the script identifies the best PDB model based on sequence coverage, 
-   resolution, and R-factor, retrieves its biological assembly (or asymmetric unit if specified), and performs 
-   the residue and chain mapping.
-3. Option to list all PDB entries mapped to the UniProt ID with metadata (experimental technique, resolution, 
-   sequence coverage, and R-factor).
+Author: Yannis Riziotis
 
-Features:
-- Supports mapping to either the biological assembly or the asymmetric unit (user-specified).
-- Outputs results in a JSON format.
-
-Usage:
-    python mapper.py --uniprot_id <UniProt_ID> [--pdb_id <PDB_ID>] [--assembly <biological|asymmetric>] [--list_all]
-
-Arguments:
-- `--uniprot_id`: Required. The UniProt ID of the protein to map.
-- `--pdb_id`: Optional. The PDB ID of the structure to use for mapping.
-- `--list_all`: Optional. List all PDB entries mapped to the UniProt ID with metadata.
-- `--outfile`: Optional. Output file to write results in .json.
-
-Dependencies:
-- Python 3
-- Requests library (install with `pip install requests`)
-
-Example Usage:
-1. Provide both UniProt ID and PDB ID:
-    python mapper.py --uniprot_id P69905 --pdb_id 1BZ0 --assembly biological
-
-2. Automatic mode:
-    python mapper.py --uniprot_id P69905 
-
-3. List all PDBs mapped to the UniProt ID:
-    python mapper.py --uniprot_id P69905 --list_all
+For details, see repo: https://github.com/iriziotis/Uniprot-PDB-mapper
 """
 
+from urllib import request
+from urllib.error import HTTPError
 import requests
 import argparse
 import json
@@ -63,10 +33,9 @@ def select_best_pdb_model(pdb_entries):
     sorted_entries = sorted(
         pdb_entries,
         key=lambda entry: (
-            -entry["coverage"],  # Higher coverage is better
-            entry.get("resolution", float("inf")),  # Lower resolution is better
-            entry.get("r_factor", float("inf")),  # Lower R-factor is better
-        ),
+            -entry.get("coverage", 0),  # Higher coverage is better
+            entry.get("resolution", 999) if entry.get("resolution", 999) else 999 # Lower resolution is better
+        )
     )
     return sorted_entries[0]  # Best entry
 
@@ -92,6 +61,23 @@ def fetch_biological_assembly(pdb_id):
         return next((assembly for assembly in assembly_data if assembly["preferred"] == True), assembly_data[0])
     else:
         raise ValueError(f"Failed to fetch biological assembly for PDB ID: {pdb_id}")
+
+
+def get_cif(pdb_id, assembly=None):
+    """Get the gzipped coordinates file via FTP"""
+    url = f'https://ftp.ebi.ac.uk/pub/databases/pdb/data/structures/all/mmCIF/{pdb_id}.cif.gz'
+    file = f'{pdb_id}.cif.gz'
+    if assembly:
+        url = f'https://ftp.ebi.ac.uk/pub/databases/pdb/data/assemblies/mmCIF/all/{pdb_id}-assembly{assembly}.cif.gz'
+        file = f'{pdb_id}-assembly{assembly}.cif.gz'
+    # Download file
+    try:
+        request.urlretrieve(url, file)
+        return
+    except HTTPError as e:
+        if assembly:
+            raise ValueError(f"No coordinates file found for  PDB ID: {pdb_id}, assembly {assembly}")
+        raise ValueError(f"No coordinates file found for  PDB ID: {pdb_id}")
 
 
 def map_residues(uniprot_id, pdb_id):
@@ -128,14 +114,18 @@ def map_residues(uniprot_id, pdb_id):
 def main():
     # Command line arguments
     parser = argparse.ArgumentParser(description="Residue and Chain Mapper for UniProt and PDB.")
-    parser.add_argument("-u", "--uniprot_id", required=True, 
+    parser.add_argument("-u", "--uniprot-id", required=True, 
                         help="The UniProt ID of the protein.")
-    parser.add_argument("-p", "--pdb_id", 
+    parser.add_argument("-p", "--pdb-id", 
                         help="The PDB ID of the structure to map (optional).")
-    parser.add_argument("--list_all", action="store_true",
+    parser.add_argument("--list-all", action="store_true",
                         help="List all PDB entries mapped to the UniProt ID with metadata.")
     parser.add_argument("-o", "--outfile", default=None,
                         help="File to write results in .json")
+    parser.add_argument("--get-assembly", action="store_true",
+                        help="Get coordinates of preferred assembly in gzipped mmCIF")
+    parser.add_argument("--get-assymetric", action="store_true",
+                        help="Get coordinates of assymetric unit in gzipped mmCIF")
 
     # Parse arguments
     args = parser.parse_args()
@@ -145,6 +135,8 @@ def main():
         pdb_id = args.pdb_id
         list_all = args.list_all
         outfile = args.outfile
+        get_assembly = args.get_assembly
+        get_assymetric = args.get_assymetric
 
         # Outfile handling
         if outfile:
@@ -162,23 +154,26 @@ def main():
                 pdb_list = []
                 for entry in pdb_entries:
                     assembly = fetch_biological_assembly(entry['pdb_id'])
-                    assembly_id = assembly["assembly_id"]
+                    assembly_id = int(assembly["assembly_id"])
                     residue_map = map_residues(uniprot_id, entry["pdb_id"])
                     pdb_list.append({    
                         "pdb_id": entry["pdb_id"],
                         "experimental_method": entry["experimental_method"],
                         "resolution": entry.get("resolution"),
                         "sequence_coverage": entry["coverage"],
-                        "r_factor": entry.get("r_factor"),
                         "preferred_assembly": assembly_id,
                         "residue_map": residue_map})
+                    if get_assembly:
+                        get_cif(entry['pdb_id'], assembly=assembly_id)
+                    if get_assymetric:
+                        get_cif(entry['pdb_id'], assembly=None)
                 print(json.dumps({"uniprot_id": uniprot_id, "pdb_entries": pdb_list}, indent=4), file=o)
 
         elif pdb_id:
             # Mode: UniProt ID and PDB ID provided
             print(f"Mapping residues for UniProt ID: {uniprot_id} and PDB ID: {pdb_id}.", file=sys.stderr)
             assembly = fetch_biological_assembly(pdb_id)
-            assembly_id = assembly["assembly_id"]
+            assembly_id = int(assembly["assembly_id"])
             residue_map = map_residues(uniprot_id, pdb_id)
             output = {
                 "uniprot_id": uniprot_id, 
@@ -186,6 +181,10 @@ def main():
                 "preferred_assembly": assembly_id,
                 "residue_map": residue_map}
             print(json.dumps(output, indent=4), file=o)
+            if get_assembly:
+                get_cif(pdb_id, assembly=assembly_id)
+            if get_assymetric:
+                get_cif(pdb_id, assembly=None)
 
         else:
             # Mode: Automatic mapping
@@ -193,8 +192,8 @@ def main():
             best_pdb = select_best_pdb_model(pdb_entries)
             pdb_id = best_pdb["pdb_id"]
             assembly = fetch_biological_assembly(pdb_id)
-            assembly_id = assembly["assembly_id"]
-            print(f"Selected PDB ID for {uniprot_id} [pdbid assembly]: {pdb_id} {assembly_id}", file=sys.stdout)
+            assembly_id = int(assembly["assembly_id"])
+            print(f"Selected PDB ID for {uniprot_id}: {pdb_id}, assembly {assembly_id}", file=sys.stdout)
             residue_map = map_residues(uniprot_id, pdb_id)
             output = {
                 "uniprot_id": uniprot_id,
@@ -202,6 +201,10 @@ def main():
                 "preferred_assembly": assembly_id,
                 "residue_map": residue_map}
             print(json.dumps(output, indent=4), file=o)
+            if get_assembly:
+                get_cif(pdb_id, assembly=assembly_id)
+            if get_assymetric:
+                get_cif(pdb_id, assembly=None)
 
     except ValueError as e:
         print(f"Error: {e}")
