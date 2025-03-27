@@ -11,13 +11,10 @@ just python and a basic ability to parse json. But I'm sure you can handle that 
 
 ## It offers these functionalities:
 - If the user provides a UniProt ID and PDB ID: It Maps residues between the UniProt protein and the specified PDB structure.
-- Automatic mode: Given only a UniProt ID, it identifies the best PDB model based on sequence coverage, 
-  resolution and R-factor, retrieves its biological assembly (or asymmetric unit if specified), and performs 
-  the residue and chain mapping.
-- Option to list all PDB entries mapped to the UniProt ID with metadata (experimental technique, resolution, 
-  sequence coverage, and R-factor).
-- Supports mapping to either the biological assembly or the asymmetric unit (user-specified).
-- Outputs results in a JSON format.
+- Automatic mode: Given only a UniProt ID, it identifies the best PDB model based on sequence coverage and resolution, retrieves
+  its biological assembly (or asymmetric unit if specified), and performs the residue and chain mapping.
+- Option to list all PDB entries mapped to the UniProt ID with metadata (experimental technique, resolution and coverage).
+- Outputs mapping in a JSON format.
 - Can automatically download structure files for assemblies, assymetric units or both (it will not unzip them though, this still burdens the user)
 
 ## Usage:
