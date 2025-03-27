@@ -1,4 +1,4 @@
-# UniProt-PDB-mapper
+# UniProt-PDB mapper
 
 ## Quick mapping of UniProt sequences to PDB structures
 
@@ -10,26 +10,26 @@ I wrote it to be simple - it doesn't require overcomplicated nextflow and pytorc
 just python and a basic ability to parse json. But I'm sure you can handle that (or you can ask chatgpt, I don't care much). 
 
 ## It offers these functionalities:
-1. If the user provides a UniProt ID and PDB ID: It Maps residues between the UniProt protein and the specified PDB structure.
-2. Automatic mode: Given only a UniProt ID, it identifies the best PDB model based on sequence coverage, 
-   resolution and R-factor, retrieves its biological assembly (or asymmetric unit if specified), and performs 
-   the residue and chain mapping.
-3. Option to list all PDB entries mapped to the UniProt ID with metadata (experimental technique, resolution, 
-   sequence coverage, and R-factor).
-
-## Fancy features:
+- If the user provides a UniProt ID and PDB ID: It Maps residues between the UniProt protein and the specified PDB structure.
+- Automatic mode: Given only a UniProt ID, it identifies the best PDB model based on sequence coverage, 
+  resolution and R-factor, retrieves its biological assembly (or asymmetric unit if specified), and performs 
+  the residue and chain mapping.
+- Option to list all PDB entries mapped to the UniProt ID with metadata (experimental technique, resolution, 
+  sequence coverage, and R-factor).
 - Supports mapping to either the biological assembly or the asymmetric unit (user-specified).
 - Outputs results in a JSON format.
+- Can automatically download structure files for assemblies, assymetric units or both (it will not unzip them though, this still burdens the user)
 
 ## Usage:
-    python uniprot_pdb_mapper.py --uniprot_id <UniProt_ID> [--pdb_id <PDB_ID>] [--assembly <biological|asymmetric>] [--list_all] [--outfile]
+    python uniprot_pdb_mapper.py --uniprot_id <UniProt_ID> [--pdb_id <PDB_ID>] [--list_all] [--outfile] [--get-assymetric] [--get-assembly]
 
 ## Arguments:
-- `--uniprot_id <UniProt_ID>`: Required. The UniProt ID of the protein to map.
-- `--pdb_id <PDB_ID>`: Optional. The PDB ID of the structure to use for mapping.
-- `--assembly <biological|asymmetric>`: Optional. Whether to fetch the assymetric unit or biological assmembly.
-- `--list_all`: Optional. List all PDB entries mapped to the UniProt ID with metadata.
+- `--uniprot-id <UniProt_ID>`: Required. The UniProt ID of the protein to map.
+- `--pdb-id <PDB_ID>`: Optional. The PDB ID of the structure to use for mapping.
+- `--list-all`: Optional. List all PDB entries mapped to the UniProt ID with metadata.
 - `--outfile`: Optional. Output file to write results in .json. Defaults to stdout.
+- `--get-assymetric`: Optional. Get an unzipped mmCIF with the raw PDB coordinates
+- `--get-assembly`: Optional. Get an unzipped mmCIF with the preferred assembly coordinates
 
 ## Dependencies:
 - Python 3
@@ -37,10 +37,20 @@ just python and a basic ability to parse json. But I'm sure you can handle that 
 
 ## Example Usage:
 1. Provide both UniProt ID and PDB ID:
-    python uniprot_pdb_mapper.py --uniprot_id P69905 --pdb_id 1BZ0 --assembly biological
+   
+    `python uniprot_pdb_mapper.py --uniprot-id P69905 --pdb-id 1BZ0`
 
-2. Automatic mode:
-    python uniprot_pdb_mapper.py --uniprot_id P69905 
+3. Automatic mode:
+   
+    `python uniprot_pdb_mapper.py --uniprot-id P69905`
 
-3. List all PDBs mapped to the UniProt ID:
-    python uniprot_pdb_mapper.py --uniprot_id P69905 --list_all
+5. List all PDBs mapped to the UniProt ID:
+   
+    `python uniprot_pdb_mapper.py --uniprot-id P69905 --list-all`
+
+7. List all PDBs mapped to the UniProt ID and get their assembly coordinate files
+   
+    `python uniprot_pdb_mapper.py --uniprot-id Q00526 --list-all --get-assembly`
+
+## Contribution
+Please report bugs and request features either by pull request or by emailing me: <ioannis.riziotis@crick.ac.uk>
