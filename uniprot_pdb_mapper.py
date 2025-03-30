@@ -116,9 +116,10 @@ def main():
     parser = argparse.ArgumentParser(description="Residue and Chain Mapper for UniProt and PDB.")
     parser.add_argument("-u", "--uniprot-id", required=True, 
                         help="The UniProt ID of the protein.")
-    parser.add_argument("-p", "--pdb-id", 
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-p", "--pdb-id", default=None, 
                         help="The PDB ID of the structure to map (optional).")
-    parser.add_argument("--list-all", action="store_true",
+    group.add_argument("-l", "--list-all", action="store_true",
                         help="List all PDB entries mapped to the UniProt ID with metadata.")
     parser.add_argument("-o", "--outfile", default=None,
                         help="File to write results in .json")
