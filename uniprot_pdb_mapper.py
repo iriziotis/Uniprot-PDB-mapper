@@ -172,6 +172,7 @@ def main():
 
         elif pdb_id:
             # Mode: UniProt ID and PDB ID provided
+            pdb_id = pdb_id.lower()
             print(f"Mapping residues for UniProt ID: {uniprot_id} and PDB ID: {pdb_id}.", file=sys.stderr)
             assembly = fetch_biological_assembly(pdb_id)
             assembly_id = int(assembly["assembly_id"])
