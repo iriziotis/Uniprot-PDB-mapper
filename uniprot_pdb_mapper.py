@@ -58,7 +58,7 @@ def fetch_biological_assembly(pdb_id):
         assembly_data = response.json().get(pdb_id, [{}])[0].get('assemblies', [])
         if not assembly_data:
             raise ValueError(f"No biological assembly found for PDB ID: {pdb_id}")
-        return next((assembly for assembly in assembly_data if assembly["preferred"] == True), assembly_data[0])
+        return next((assembly for assembly in assembly_data if assembly["preferred"]), assembly_data[0])
     else:
         raise ValueError(f"Failed to fetch biological assembly for PDB ID: {pdb_id}")
 
